@@ -2,7 +2,7 @@
 #  1. convert GIF and .mp3 into .mp4 file
 #     DONE
 #  2. loop GIF and .mp3 into .mp4 file
-#     IN PROGRESS
+#     DONE
 #  3. analyze .mp3 file (using bpm), return results
 #  4. adjust speed of looping GIF based on .mp3 results
 #  5. convert adjusted, looped GIF and .mp3 into .mp4 file
@@ -10,16 +10,18 @@
 from __future__ import print_function
 import ffmpeg
 import os
+import json
 
 def convertToVideo(gifPath, mp3Path, outPath):
     mp3 = ffmpeg.input(mp3Path)
     gif = ffmpeg.input(gifPath, stream_loop=-1)
-    a1 = mp3["a"]
-    v1 = mp3["v"]
+    a = mp3["a"]
+    v = gif["v"]
+    duration = ffmpeg.probe(mp3Path)["format"]["duration"]
     (
         ffmpeg
-        .output(mp3, gif, outPath, shortest=outPath)
-        .run() #overwrite_output=True
+        .output(v, a, outPath, t=duration)
+        .run()#overwrite_output=True)
     )
 
 
