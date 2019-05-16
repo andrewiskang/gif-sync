@@ -17,11 +17,13 @@ def convertToVideo(gifPath, mp3Path, outPath):
     gif = ffmpeg.input(gifPath, stream_loop=-1)
     a = mp3["a"]
     v = gif["v"]
-    duration = ffmpeg.probe(mp3Path)["format"]["duration"]
+
+    # duration capped at 5 minutes
+    duration = min(ffmpeg.probe(mp3Path)["format"]["duration"], 300)
     (
         ffmpeg
         .output(v, a, outPath, t=duration)
-        .run()#overwrite_output=True)
+        .run(overwrite_output=True)
     )
 
 
