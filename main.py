@@ -19,7 +19,7 @@ def convertToVideo(gifPath, mp3Path, outPath):
     v = gif["v"]
 
     # duration capped at 5 minutes
-    duration = min(ffmpeg.probe(mp3Path)["format"]["duration"], 300)
+    duration = min(float(ffmpeg.probe(mp3Path)["format"]["duration"]), 300)
     (
         ffmpeg
         .output(v, a, outPath, t=duration)
@@ -27,17 +27,17 @@ def convertToVideo(gifPath, mp3Path, outPath):
     )
 
 
-gifPaths = []
-mp3Paths = []
+gifPath = None
+mp3Path = None
 
 for file in os.listdir("in/"):
     if file.endswith(".gif"):
-        gifPaths.append("in/" + file)
-    elif file.endswith(".mp3"):
-        mp3Paths.append("in/" + file)
+        gifPath = "in/" + file
+        break
+for file in os.listdir("in/"):
+    if file.endswith(".mp3"):
+        mp3Path = "in/" + file
+        break
 
-counter = 0
-for gifPath in gifPaths:
-    for mp3Path in mp3Paths:
-        convertToVideo(gifPath, mp3Path, "out/out"+str(counter)+".mp4")
-        counter += 1
+if gifPath and mp3Path:
+    convertToVideo(gifPath, mp3Path, "out/out.mp4")
