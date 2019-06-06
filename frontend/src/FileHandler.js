@@ -21,9 +21,11 @@ class FileHandler extends Component {
     const files = event.target.files
     const fileType = event.target.name
 
+    /*
     if (loaded[fileType] === 100) {
       axios.delete('http://localhost:8000/delete/'+this.props.files[fileType].name)
     }
+    */
 
     this.props.handleFileSelect(fileType, files[0])
     this.setState({
@@ -39,23 +41,25 @@ class FileHandler extends Component {
     const { files } = this.props
     const fileType = event.target.name
 
-    const endpoint = 'http://localhost:8000/upload'
-    const data = new FormData()
-    data.append('file', files[fileType], files[fileType].name)
-    axios
-      .post(endpoint, data, {
-        onUploadProgress: ProgressEvent => {
-          this.setState({
-            loaded: {
-              ...loaded,
-              [fileType]: (ProgressEvent.loaded / ProgressEvent.total*100),
-            }
-          })
-        },
-      })
-      .then(res => {
-        console.log(res.statusText)
-      })
+    if (files[fileType]) {
+      const endpoint = `http://localhost:8000/upload/${fileType}`
+      const data = new FormData()
+      data.append('file', files[fileType], files[fileType].name)
+      axios
+        .post(endpoint, data, {
+          onUploadProgress: ProgressEvent => {
+            this.setState({
+              loaded: {
+                ...loaded,
+                [fileType]: (ProgressEvent.loaded / ProgressEvent.total*100),
+              }
+            })
+          },
+        })
+        .then(res => {
+          console.log(res.statusText)
+        })
+    }
   }
 
   render() {
@@ -67,14 +71,14 @@ class FileHandler extends Component {
           type="file"
           name="videoFile"
           onChange={this.handleSelectedFile} />
-        <button name="videoFile" onClick={this.handleUpload}>Upload</button>
+        <button name="videoFile" onClick={this.handleUpload}>Upload Video</button>
         <div> {Math.round(loaded.videoFile,2) } %</div>
         
         <input
           type="file"
           name="audioFile"
           onChange={this.handleSelectedFile} />
-        <button name="audioFile" onClick={this.handleUpload}>Upload</button>
+        <button name="audioFile" onClick={this.handleUpload}>Upload Audio</button>
         <div> {Math.round(loaded.audioFile,2) } %</div>
       </div>
     )

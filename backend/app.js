@@ -30,9 +30,25 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 // post request handler for uploads
-app.post('/upload', (req, res, next) => {
+app.post('/upload/:type', (req, res, next) => {
   let uploadFile = req.files.file
-  const fileName = req.files.file.name
+  let type = req.params.type
+  let extension = path.extname(uploadFile.name)
+  uploadFile.mv(
+    `${__dirname}/public/files/${type}${extension}`,
+    function (err) {
+      if (err) {
+        return res.status(500).send(err)
+      }
+      res.json({
+        file: `public/files/${type}${extension}`,
+      })
+    },
+  )
+})
+
+// get request handler for combining video and audio
+app.get('/combine/:video-:audio', (req, res, next) => {
   uploadFile.mv(
     `${__dirname}/public/files/${fileName}`,
     function (err) {
@@ -40,12 +56,13 @@ app.post('/upload', (req, res, next) => {
         return res.status(500).send(err)
       }
       res.json({
-        file: `public/${req.files.file.name}`,
+        file: `public/files/${req.files.file.name}`,
       })
     },
   )
 })
 
+/*
 // post request handler for clearing uploaded file
 app.delete('/delete/*', (req, res, next) => {
   const fileName = decodeURI(req.path).split("/").pop()
@@ -55,7 +72,7 @@ app.delete('/delete/*', (req, res, next) => {
     }
   })
 })
-
+*/
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
