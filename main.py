@@ -19,7 +19,7 @@ def convertToVideo(gifPath, mp3Path, outPath):
     v = gif["v"]
 
     # duration capped at 5 minutes
-    duration = min(float(ffmpeg.probe(mp3Path)["format"]["duration"]), 300)
+    duration = min(float(ffmpeg.probe(mp3Path)["format"]["duration"]), 600)
     (
         ffmpeg
         .output(v, a, outPath, t=duration)
