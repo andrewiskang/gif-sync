@@ -5,7 +5,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
-var fs = require('fs')
+var fs = require('fs');
+var ffmpeg = require('fluent-ffmpeg');
 
 
 var indexRouter = require('./routes/index');
@@ -48,18 +49,68 @@ app.post('/upload/:type', (req, res, next) => {
 })
 
 // get request handler for combining video and audio
-app.get('/combine/:video-:audio', (req, res, next) => {
-  uploadFile.mv(
-    `${__dirname}/public/files/${fileName}`,
-    function (err) {
-      if (err) {
-        return res.status(500).send(err)
-      }
-      res.json({
-        file: `public/files/${req.files.file.name}`,
+app.get('/convert', (req, res, next) => {
+  var directory = `${__dirname}/public/files/`
+  var videoPath
+  var audioPath
+  var duration
+
+  // pull filepaths 
+  let files = fs.readdirSync(directory);
+  for (let i in files) {
+    let fileName = files[i].substr(0, files[i].lastIndexOf('.'))
+    if (fileName == "videoFile") {
+      videoPath = directory+files[i]
+    }
+    else if (fileName == "audioFile") {
+      audioPath = directory+files[i]
+    }
+  }
+
+  if (!(videoPath && audioPath)) {
+    return res.status(500).send("Not all files uploaded!")
+  }
+
+  ffmpeg.ffprobe(audioPath, function(err, metadata) {
+    // video cannot be longer than 10 minutes
+    duration = Math.min(metadata.format.duration, 600)
+    
+    // combine video and audio inputs
+    ffmpeg()
+      .input(videoPath)
+      .inputOptions('-stream_loop -1')
+      .input(audioPath)
+      .output(`${__dirname}/public/files/outputFile.mp4`)
+      .outputOptions(
+        '-map', '0:v',
+        '-map', '1:a',
+        '-t', duration
+      )
+
+      .on('end', function() {                    
+        // clean up video, audio files after usage
+        for (let i in files) {
+          let fileName = files[i].substr(0, files[i].lastIndexOf('.'))
+          if (fileName == "videoFile" || fileName == "audioFile") {
+            fs.unlink(directory+files[i], (err) => {
+              if (err) {
+                console.log('error:', err)
+              }
+            })
+          }
+        }
+        console.log('conversion ended')
+        return res.json({
+          file: `public/files/outputFile.mp4`
+        })
       })
-    },
-  )
+
+      .on('error', function(err){
+        console.log('error:', err)
+        return res.status(500).send(err)
+      })
+      .run()
+  })
 })
 
 /*
