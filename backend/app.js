@@ -53,9 +53,9 @@ app.get('/convert', (req, res, next) => {
   var directory = `${__dirname}/public/files/`
   var videoPath
   var audioPath
-  var duration
 
-  // pull filepaths 
+  // pull video and audio filepath
+  // if multiple files match, the last match will be selected
   let files = fs.readdirSync(directory);
   for (let i in files) {
     let fileName = files[i].substr(0, files[i].lastIndexOf('.'))
@@ -67,15 +67,15 @@ app.get('/convert', (req, res, next) => {
     }
   }
 
+  // exit if video and audio files do not both exist
   if (!(videoPath && audioPath)) {
     return res.status(500).send("Not all files uploaded!")
   }
 
+  // combine video and audio inputs, with duration limited to 10 minutes
   ffmpeg.ffprobe(audioPath, function(err, metadata) {
-    // video cannot be longer than 10 minutes
-    duration = Math.min(metadata.format.duration, 600)
-    
-    // combine video and audio inputs
+    var duration = Math.min(metadata.format.duration, 600)
+
     ffmpeg()
       .input(videoPath)
       .inputOptions('-stream_loop -1')
@@ -86,7 +86,7 @@ app.get('/convert', (req, res, next) => {
         '-map', '1:a',
         '-t', duration
       )
-
+      // ffmpeg succeeded
       .on('end', function() {                    
         // clean up video, audio files after usage
         for (let i in files) {
@@ -104,7 +104,7 @@ app.get('/convert', (req, res, next) => {
           file: `public/files/outputFile.mp4`
         })
       })
-
+      // ffmpeg failed
       .on('error', function(err){
         console.log('error:', err)
         return res.status(500).send(err)
