@@ -113,21 +113,59 @@ app.get('/convert', (req, res, next) => {
   })
 })
 
-/*
-// post request handler for clearing uploaded file
-app.delete('/delete/*', (req, res, next) => {
-  const fileName = decodeURI(req.path).split("/").pop()
-  fs.unlink(`${__dirname}/public/files/${fileName}`, (err) => {
-    if (err) {
-      return res.status(500).send(err)
+// streams video to video players
+app.get('/video', function(req, res) {
+  const path = `${__dirname}/public/files/outputFile.mp4`
+  const stat = fs.statSync(path)
+  const fileSize = stat.size
+  const range = req.headers.range
+  if (range) {
+    const parts = range.replace(/bytes=/, "").split("-")
+    const start = parseInt(parts[0], 10)
+    const end = parts[1] 
+      ? parseInt(parts[1], 10)
+      : fileSize-1
+    const chunksize = (end-start)+1
+    const file = fs.createReadStream(path, {start, end})
+    const head = {
+      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+      'Accept-Ranges': 'bytes',
+      'Content-Length': chunksize,
+      'Content-Type': 'video/mp4',
+    }
+    res.writeHead(206, head);
+    file.pipe(res);
+  } else {
+    const head = {
+      'Content-Length': fileSize,
+      'Content-Type': 'video/mp4',
+    }
+    res.writeHead(200, head)
+    fs.createReadStream(path).pipe(res)
+  }
+})
+
+// post request handler for clearing all files from directory
+app.delete('/refresh', (req, res, next) => {
+  const directory = `${__dirname}/public/files/`
+  
+  fs.readdir(directory, (err, files) => {
+    if (err) return res.status(500).send(err)
+
+    for (const file of files) {
+      fs.unlink(path.join(directory, file), err => {
+        if (err) return res.status(500).send(err)
+      })
     }
   })
+  
+  return res.send(200)
 })
-*/
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
-});
+})
 
 // error handler
 app.use(function(err, req, res, next) {
@@ -137,8 +175,8 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
-});
+  res.render('error')
+})
 
 
-module.exports = app;
+module.exports = app
