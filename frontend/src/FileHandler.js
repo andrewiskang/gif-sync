@@ -26,7 +26,6 @@ class FileHandler extends Component {
       axios.delete('http://localhost:8000/delete/'+this.props.files[fileType].name)
     }
     */
-
     this.props.handleFileSelect(fileType, files[0])
     this.setState({
       loaded: {
@@ -62,6 +61,21 @@ class FileHandler extends Component {
     }
   }
 
+  handleConvert = async event => {
+    const { loaded } = this.state
+    const { files, handleFileSelect } = this.props
+
+    if (loaded['videoFile'] && loaded['audioFile']) {
+      const endpoint = 'http://localhost:8000/convert'
+      await axios
+        .get(endpoint)
+        .then(res => {
+          console.log(res.statusText)
+        })
+      handleFileSelect('convertedFile', 'loaded')
+    }
+  }
+
   render() {
     const { loaded } = this.state
     
@@ -80,6 +94,8 @@ class FileHandler extends Component {
           onChange={this.handleSelectedFile} />
         <button name="audioFile" onClick={this.handleUpload}>Upload Audio</button>
         <div> {Math.round(loaded.audioFile,2) } %</div>
+
+        <button name="convert" onClick={this.handleConvert}>Convert!</button>
       </div>
     )
   }
